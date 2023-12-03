@@ -33,18 +33,29 @@ const buildMatrix = (arr: string[]): Matrix => {
 	}, []);
 }
 
+type Zone = {
+	x: number;
+	y: number;
+	char: string;
+}
 
-const buildZones = (m: Matrix): Array<Array<string>> => {
-	const zones: Array<Array<string>> = m.map(line => line.map(c => ''));
+
+const buildZones = (m: Matrix): Array<Array<Zone>> => {
+	const zones: Array<Array<Zone | undefined>> = m.map(line => line.map(c => ({char: '', y: -1, x: -1})));
 	m.forEach((line, i) => {
 		line.forEach((c, j) => {
 			if (isSymbol(c)) {
-				zones[i][j] = c;
+				const zoneCenter: Zone = {
+					char: c,
+					x: j,
+					y: i,
+				}
+				zones[i][j] = {...zoneCenter};
 				for (let y = -1; y <= 1; y++) {
 					for(let x = -1; x <= 1; x++) {
 						if (exists(m, i + y, j + x)) {
-							if (zones[i + y][j + x] !== '*') {
-								zones[i + y][j + x] = c;
+							if (zones[i + y][j + x].char !== '*') {
+								zones[i + y][j + x] = {...zoneCenter};
 							}
 						}
 					}
@@ -76,27 +87,26 @@ const buildZones = (m: Matrix): Array<Array<string>> => {
 // 	return zones;
 // }
 
-const sumNumbersInZones = (m: Matrix) => {
-	let numbers = [];
+const sumNumbersInZones = (m: Matrix): Array<{n: number; zone: Zone}> => {
+	let numbers: Array<{n: number; zone: Zone | undefined}> = [];
 	m.forEach((line, i) => {
 		let n = 0;
-		let inZone = false;
-		let symbol = '';
+		let zone: Zone | undefined;
 		line.forEach((c, j) => {
 			if (isDigit(c)) {
 				n = n * 10 + Number(c);
-				inZone = inZone || !!zones1[i][j];
-				symbol = symbol === '*' ? '*' : zones1[i][j];
+				zone = zone?.char ? zone : zones1[i][j];
 			}
 			// not digit or last
 			if (!isDigit(c) || j === line.length - 1) {
-				if (n > 0 && inZone) {
+				if (n > 0 && !!zone) {
 					// console.log(n);
-					numbers.push({n, symbol})
+					numbers.push({n, zone: zone.char ? zone : undefined})
 				}
 				n = 0;
-				symbol = '';
-				inZone = false;
+				zone = undefined;
+				// symbol = '';
+				// inZone = false;
 			}
 
 		})
@@ -132,11 +142,16 @@ const sumNumbersInZonesPt2 = (m: Matrix) => {
 
 const matrix = buildMatrix(arr);
 const zones1 = buildZones(matrix);
-const result1 = sumNumbersInZones(matrix).reduce((r, item) => r + item.n, 0);
-const result2 = sumNumbersInZonesPt2(matrix);
+const numbers = sumNumbersInZones(matrix);
+const result1 = numbers.filter(n => !!n.zone).reduce((r, item) => r + item.n, 0);
+// const result2 = numbers.filter(item => item.symbol === '*').reduce((r, item) => r + item.n, 0);
 
-console.log(zones1.join('\n'));
+
+// console.log(zones1.map(z => JSON.stringify(z)).join('\n'));
+// console.log(numbers.map(n => JSON.stringify(n)).join('\n'));
+
+// console.log(numbers);
 console.log('pt1:', result1);
-console.log('pt2:', result2);
+// console.log('pt2:', result2);
 
 
