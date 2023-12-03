@@ -1,5 +1,5 @@
 // @ts-ignore
-const file = Bun.file("input-mini.txt");
+const file = Bun.file("input.txt");
 // @ts-ignore
 const input = await file.text();
 const debug = true;
@@ -22,6 +22,9 @@ const isSymbol = (c: string) => !isDigit(c) && c !== DOT;
 const exists = (matrix: Matrix, y, x): boolean => {
 	return !(typeof matrix[y] === 'undefined' || typeof matrix[y][x] === 'undefined');
 }
+type P1 = {
+	char: ''
+}
 
 const buildMatrix = (arr: string[]): Matrix => {
 	return arr.reduce((r, s) => {
@@ -31,16 +34,18 @@ const buildMatrix = (arr: string[]): Matrix => {
 }
 
 
-const buildZones = (m: Matrix): Array<Array<boolean>> => {
-	const zones: Array<Array<boolean>> = m.map(line => line.map(c => false));
+const buildZones = (m: Matrix): Array<Array<string>> => {
+	const zones: Array<Array<string>> = m.map(line => line.map(c => ''));
 	m.forEach((line, i) => {
 		line.forEach((c, j) => {
 			if (isSymbol(c)) {
-				zones[i][j] = true;
+				zones[i][j] = c;
 				for (let y = -1; y <= 1; y++) {
 					for(let x = -1; x <= 1; x++) {
 						if (exists(m, i + y, j + x)) {
-							zones[i + y][j + x] = true;
+							if (zones[i + y][j + x] !== '*') {
+								zones[i + y][j + x] = c;
+							}
 						}
 					}
 				}
@@ -49,26 +54,76 @@ const buildZones = (m: Matrix): Array<Array<boolean>> => {
 	});
 	return zones;
 }
+// const buildZonesPt2 = (m: Matrix): Array<Array<boolean>> => {
+// 	const zones: Array<Array<boolean>> = m.map(line => line.map(c => false));
+// 	m.forEach((line, i) => {
+// 		line.forEach((c, j) => {
+// 			if (c === '*') {
+// 				zones[i][j] = true;
+// 			}
+// 			if (c === '*') {
+// 				zones[i][j] = true;
+// 				for (let y = -1; y <= 1; y++) {
+// 					for(let x = -1; x <= 1; x++) {
+// 						if (exists(m, i + y, j + x)) {
+// 							zones[i + y][j + x] = true;
+// 						}
+// 					}
+// 				}
+// 			}
+// 		})
+// 	});
+// 	return zones;
+// }
 
 const sumNumbersInZones = (m: Matrix) => {
-	let sum = 0;
+	let numbers = [];
 	m.forEach((line, i) => {
 		let n = 0;
 		let inZone = false;
+		let symbol = '';
 		line.forEach((c, j) => {
 			if (isDigit(c)) {
 				n = n * 10 + Number(c);
-				inZone = inZone || zones[i][j];
+				inZone = inZone || !!zones1[i][j];
+				symbol = symbol === '*' ? '*' : zones1[i][j];
 			}
 			// not digit or last
 			if (!isDigit(c) || j === line.length - 1) {
 				if (n > 0 && inZone) {
 					// console.log(n);
-					sum += n;
+					numbers.push({n, symbol})
 				}
 				n = 0;
+				symbol = '';
 				inZone = false;
 			}
+
+		})
+	});
+	return numbers;
+}
+
+const sumNumbersInZonesPt2 = (m: Matrix) => {
+	let sum = 0;
+	m.forEach((line, i) => {
+		let n = 0;
+		let inZone = false;
+		line.forEach((c, j) => {
+			// if (c === '*') {
+			// 	n = n * 10 + Number(c);
+			// 	inZone = inZone || zones1[i][j];
+			// }
+
+			// not digit or last
+			// if (!isDigit(c) || j === line.length - 1) {
+			// 	if (n > 0 && inZone) {
+			// 		// console.log(n);
+			// 		sum += n;
+			// 	}
+			// 	n = 0;
+			// 	inZone = false;
+			// }
 
 		})
 	});
@@ -76,9 +131,12 @@ const sumNumbersInZones = (m: Matrix) => {
 }
 
 const matrix = buildMatrix(arr);
-const zones = buildZones(matrix);
-const result = sumNumbersInZones(matrix);
+const zones1 = buildZones(matrix);
+const result1 = sumNumbersInZones(matrix).reduce((r, item) => r + item.n, 0);
+const result2 = sumNumbersInZonesPt2(matrix);
 
-console.log(result);
+console.log(zones1.join('\n'));
+console.log('pt1:', result1);
+console.log('pt2:', result2);
 
 
