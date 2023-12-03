@@ -1,84 +1,84 @@
 // @ts-ignore
-const file = Bun.file("input.txt");
+const file = Bun.file("input-mini.txt");
 // @ts-ignore
 const input = await file.text();
 const debug = true;
-
-type RGB = {
-	r: number;
-	g: number;
-	b: number;
-}
-const COLORS = ['red', 'green', 'blue'] as const;
-type Color = typeof COLORS[number];
-
-
-const parseColor = (s: string, c: Color): number => {
-	if (s.indexOf(c) > -1) {
-		return parseInt(s.replace(c, '').trim()) || 0;
-	}
-	return 0;
-}
-
-const parseRun = (s: string): RGB => {
-	const colors = s.split(',');
-	const n: RGB = {
-		r: colors.reduce((res, c) => res || parseColor(c, 'red'), 0),
-		g: colors.reduce((res, c) => res || parseColor(c, 'green'), 0),
-		b: colors.reduce((res, c) => res || parseColor(c, 'blue'), 0),
-	}
-	return n;
-}
-
-const parseLine = (s: string): RGB[] => {
-	const [p1, p2] = s.split(':');
-	const runs = p2.split(';');
-	return runs.map(parseRun);
-}
-
-const isValid = ({r, g, b}: RGB, limit: RGB): boolean => {
-	return r <= limit.r && g <= limit.g && b <= limit.b;
-}
-
 console.clear();
-
+console.log('---------');
+const DOT = '.';
 
 let arr = input.toLowerCase().split('\n') as string[];
+arr = arr.filter(Boolean);
 if (debug) {
 	// arr = ['nine4pvtl','twonetwone', 'eightnineseventwo1sevenine', ...arr];
 	// arr = arr.splice(0, 5);
 } else {
 	console.debug = () => null;
 }
+type Matrix = Array<Array<string>>;
 
-const LIMIT: RGB = {
-	r: 12,
-	g: 13,
-	b: 14
+const isDigit = (c: string) => c >= '0' && c <= '9';
+const isSymbol = (c: string) => !isDigit(c) && c !== DOT;
+const exists = (matrix: Matrix, y, x): boolean => {
+	return !(typeof matrix[y] === 'undefined' || typeof matrix[y][x] === 'undefined');
 }
 
-const parseGameNumber = (s: string): number => {
-	const [_, nstr] = s.split('game');
-	return parseInt(nstr.trim());
+const buildMatrix = (arr: string[]): Matrix => {
+	return arr.reduce((r, s) => {
+		r.push(s.split(''));
+		return r;
+	}, []);
 }
 
-const result1 = arr.filter(Boolean)
-	.reduce((result, s) => {
-		const game = parseLine(s);
-		const {r,g,b}: RGB = game.reduce((rgb, game) => {
-			if (isValid(game, rgb)) {
-				return rgb;
-			} else {
-				return ({
-					r: Math.max(rgb.r, game.r),
-					g: Math.max(rgb.g, game.g),
-					b: Math.max(rgb.b, game.b),
-				})
+
+const buildZones = (m: Matrix): Array<Array<boolean>> => {
+	const zones: Array<Array<boolean>> = m.map(line => line.map(c => false));
+	m.forEach((line, i) => {
+		line.forEach((c, j) => {
+			if (isSymbol(c)) {
+				zones[i][j] = true;
+				for (let y = -1; y <= 1; y++) {
+					for(let x = -1; x <= 1; x++) {
+						if (exists(m, i + y, j + x)) {
+							zones[i + y][j + x] = true;
+						}
+					}
+				}
 			}
-		}, {r: 0, g: 0, b: 0});
+		})
+	});
+	return zones;
+}
 
-		return result + (r * g * b);
-	}, 0);
+const sumNumbersInZones = (m: Matrix) => {
+	let sum = 0;
+	m.forEach((line, i) => {
+		let n = 0;
+		let inZone = false;
+		line.forEach((c, j) => {
+			if (isDigit(c)) {
+				n = n * 10 + Number(c);
+				inZone = inZone || zones[i][j];
+			}
+			// not digit or last
+			if (!isDigit(c) || j === line.length - 1) {
+				if (n > 0 && inZone) {
+					// console.log(n);
+					sum += n;
+				}
+				n = 0;
+				inZone = false;
+			}
 
-console.log(result1)
+		})
+	});
+	return sum;
+}
+
+const matrix = buildMatrix(arr);
+const zones = buildZones(matrix);
+const result = sumNumbersInZones(matrix);
+
+console.log(result);
+
 
