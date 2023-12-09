@@ -1,5 +1,5 @@
 // @ts-ignore
-const file = Bun.file("input.txt");
+const file = Bun.file("input-mini.txt");
 // @ts-ignore
 const input = await file.text();
 
@@ -11,6 +11,7 @@ arr = arr.filter(Boolean);
 
 type NodeX = {
 	top: string;
+	type?: 'a' | 'z';
 	l: string;
 	r: string;
 }
@@ -27,8 +28,11 @@ const parse = (lines: string[]): NodeX[] => {
 	return rest.map(s => {
 		const [p1, p2] = s.split('=');
 		const [l, r] = p2.replace('(', '').replace(')', '').split(', ').map(s => s.trim());
+		const top = p1.trim();
+		const type = top.split('')[2] as 'a' | 'z';
 		return {
-			top: p1.trim(),
+			top,
+			type,
 			l,
 			r
 		}
@@ -52,8 +56,23 @@ const travel = (dic: Record<string, NodeY>, path: Direction[], steps: number, ne
 		console.log('node not found', { next, steps, direction });
 		return steps;
 	}
-	if (steps > 1_000_000) return steps;
+	if (steps > 100_000_000) return steps;
 	return travel(dic, path, steps + 1, node[direction]);
+}
+
+const travel2 = (dic: Record<string, NodeX>, path: Direction[], steps: number, nextSet: string[]): number => {
+	const direction = path[steps % path.length];
+	const newNextSet = nextSet.map((next => {
+		const node = dic[next][direction];
+		return node;
+	}));
+
+	if (steps > 1_000_000) return steps;
+	if (newNextSet.some( set => dic[set].type !== 'z')) {
+		return travel2(dic, path, steps + 1, newNextSet);
+	} else {
+		return steps + 1;
+	}
 }
 
 const solvePart1 = (input: string[]): number => {
@@ -71,10 +90,22 @@ const solvePart1 = (input: string[]): number => {
 }
 
 const solvePart2 = (input: string[]): number => {
-	return 0;
+	const path = parsePath(input);
+	const nodes = parse(input);
+	const dic = nodes.reduce((acc, {top, l, r, type }) => {
+		acc[top] = { r, l, top, type };
+		return acc;
+	}, {});
+
+	const startingNodes = nodes.filter(n => n.type === 'a').map(n => n.top);
+	const steps = travel2(dic, path, 0, [...startingNodes]);
+	return steps;
 }
 
 console.time();
-console.log('pt1:', solvePart1(arr));
+// console.log('pt1:', solvePart1(arr));
 console.log('pt2:', solvePart2(arr));
 console.timeEnd();
+
+
+// 1000_000_000_000 - too low
