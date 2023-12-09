@@ -6,15 +6,77 @@ const input = await file.text();
 console.clear();
 console.log('---------');
 
-let arr = input.toLowerCase().split('\n') as string[];
+let arr = input.toUpperCase().split('\n') as string[];
 arr = arr.filter(Boolean);
 
-const parse = (lines: string[]): any[] => {
-	return [];
+type Cards = {
+	hand: string[],
+	amount: number,
+	weight: number;
 }
 
-const solvePart1 = (input: string[]): number => {
+const ORDER = 'AKQJT98765432'.split('').reverse();
+
+const parse = (lines: string[]): Cards[] => {
+	return lines.map(s => {
+		const [handStr, amountStr] = s.split(' ');
+		return ({
+			hand: handStr.split(''),
+			amount: Number(amountStr),
+			weight: 0,
+		})
+	})
+}
+
+const compareHighestCard = (hand1: string[], hand2: string[]) => {
+	for (let i = 0; i < hand1.length; i++) {
+		if (hand1[i] === hand2[i]) continue;
+		else {
+			return (ORDER.indexOf(hand1[i]) - ORDER.indexOf(hand2[i]));
+		}
+	}
 	return 0;
+}
+
+const solvePart1 = (input: string[]) => {
+	const cards = parse(input);
+
+	cards.map(c => {
+		// @ts-ignore
+		const n = Array.from(new Set(c.hand)).length;
+		const dic = c.hand.reduce((acc, s) => {
+			acc[s] = acc[s] || 0;
+			acc[s] += 1;
+			acc.first = Math.max(acc[s], acc.first);
+			return acc;
+		}, { first: 0 });
+
+		let weight = 0;
+		switch (n) {
+		case 5:
+			weight = 10;
+			break
+		case 4:
+			weight = 100;
+			break
+		case 3:
+			weight = dic.first === 3 ? 10_000 : 1_000;
+			break
+		case 2:
+			weight = dic.first === 4 ? 1000_000 : 100_000;
+			break;
+		case 1:
+			weight = 10_000_000;
+			break;
+		}
+		c.weight = weight;
+	});
+
+	let result = cards.sort((a, b) => a.weight - b.weight || compareHighestCard(a.hand, b.hand));
+	return result.reduce((acc, card, i) => {
+		// console.log(i + 1, card.amount);
+		return acc + card.amount * (i + 1);
+	}, 0);
 }
 
 const solvePart2 = (input: string[]): number => {
