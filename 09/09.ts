@@ -32,24 +32,37 @@ const findNext = (triangle: number[][]): number => {
 	}, 0);
 }
 
+const findPrevious = (triangle: number[][]) => {
+	let n = 0;
+	for (let i = triangle.length - 2; i >= 0; i--) {
+		const [firstCurrent] = triangle[i];
+		n = firstCurrent - n;
+	}
+	return n;
+}
 
 const solvePart1 = (input: string[]): number => {
 	const data = parse(input);
-
-	const sum = data.reduce((acc, sequence) => {
+	return data.reduce((acc, sequence) => {
 		const triangle = nextSequence(sequence, [[...sequence]]);
 		const next = findNext(triangle);
 		return acc + next;
 	}, 0);
-	return sum;
 }
 
 const solvePart2 = (input: string[]): number => {
-	return 0;
+	const data = parse(input);
+	return data.reduce((acc, sequence) => {
+		const triangle = nextSequence(sequence, [[...sequence]]);
+		const next = findPrevious(triangle);
+		return acc + next;
+	}, 0);
 }
-
 
 console.time();
 console.log('pt1:', solvePart1(arr));
+console.timeEnd();
+
+console.time();
 console.log('pt2:', solvePart2(arr));
 console.timeEnd();

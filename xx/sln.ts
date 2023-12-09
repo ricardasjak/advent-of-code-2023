@@ -23,5 +23,8 @@ const solvePart2 = (input: string[]): number => {
 
 console.time();
 console.log('pt1:', solvePart1(arr));
+console.timeEnd();
+
+console.time();
 console.log('pt2:', solvePart2(arr));
 console.timeEnd();
